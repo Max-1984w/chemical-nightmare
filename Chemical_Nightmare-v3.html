@@ -1,0 +1,379 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Chemical Nightmare</title>
+<style>
+:root{--bg:#0a0608;--fg:#f3e3c3;--ac:#e0452b;--pn:#1c1218;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root{--bg:#0a0608;--fg:#f3e3c3}}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font-family:ui-monospace,Menlo,monospace;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+html{height:100%}
+body{display:flex;align-items:center;justify-content:center}
+#g{position:relative;width:min(100vw,177.78vh);height:min(56.25vw,100vh);overflow:hidden}
+#jpb{position:absolute;right:18px;bottom:22px;width:84px;height:84px;border-radius:50%;display:none;opacity:.85;padding:0;font-size:12px}
+#jz{position:absolute;left:0;bottom:0;width:50%;height:78%;display:none;touch-action:none}
+#jb{position:absolute;left:70px;top:calc(100% - 70px);width:90px;height:90px;margin:-45px 0 0 -45px;border:2px solid var(--ac);border-radius:50%;background:rgba(224,69,43,.12);opacity:.5}
+#jk{position:absolute;left:50%;top:50%;width:40px;height:40px;border-radius:50%;background:var(--ac);opacity:.85;transform:translate(-50%,-50%)}
+#rot{position:fixed;inset:0;z-index:99;display:none;align-items:center;justify-content:center;background:var(--bg);color:var(--fg);text-align:center;padding:20px;font-size:18px}
+@media (orientation:portrait){#rot{display:flex}}
+canvas{width:100%;height:100%;image-rendering:pixelated;display:block}
+.o{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:rgba(10,6,8,.9);padding:8px 14px;overflow:auto;text-align:center}
+.o.on{display:flex}
+button{font:inherit;font-size:clamp(11px,3vh,14px);color:var(--fg);background:var(--pn);border:2px solid var(--ac);padding:8px 12px;border-radius:4px;cursor:pointer}
+button:active{background:var(--ac)}
+button:disabled{opacity:.35;cursor:default}
+h1{color:var(--ac);font-size:clamp(20px,8vh,30px);margin:0;text-shadow:3px 3px #000;line-height:1.1}
+h2{margin:0;font-size:17px}
+p{margin:0;font-size:12px;opacity:.85}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+#dp{position:absolute;bottom:12px;left:12px;display:none;grid-template-columns:repeat(3,52px);grid-template-rows:repeat(3,52px);gap:3px}
+#dp button{padding:0;opacity:.6;font-size:18px}
+#pb{position:absolute;top:8px;right:10px;display:none;padding:8px 12px;opacity:.7}
+#q{background:rgba(10,6,8,.88);justify-content:center}
+#qo{display:grid;grid-template-columns:1fr 1fr;gap:6px;width:100%}
+#qt{font-size:15px;line-height:1.3}
+#qbw{width:100%;height:8px;border:1px solid var(--ac)}#qb{height:100%;background:var(--ac)}
+#cg{display:grid;grid-template-columns:1fr 1fr;gap:6px;width:100%}
+#cg button{text-align:left}
+</style></head><body><div id="g"><canvas id="c"></canvas>
+<div id="dp"><button data-d="u" style="grid-area:1/2">▲</button><button data-d="l" style="grid-area:2/1">◀</button><button data-d="r" style="grid-area:2/3">▶</button><button data-d="d" style="grid-area:3/2">▼</button></div>
+<button id="pb" onclick="pause()">II</button><div id="jz"><div id="jb"><div id="jk"></div></div></div><button id="jpb">PULAR</button>
+<div class="o on" id="m"><h1>CHEMICAL<br>NIGHTMARE</h1><p>Fuja. Responda. Sobreviva.</p><button onclick="scr('ls');mkLS()">▶ Jogar</button><button onclick="scr('cs');mkCS()">Personagens</button><p>WASD ou setas no PC (Espaço pula); joystick na tela no celular. Quando o assassino te alcançar, responda a pergunta de Química!</p></div>
+<div class="o" id="cs"><h2>Escolha o personagem</h2><div id="cg"></div><button onclick="scr('m')">Voltar</button></div>
+<div class="o" id="ls"><h2>Fases</h2><div class="grid" id="lg"></div><p id="li"></p><button onclick="scr('m')">Voltar</button></div>
+<div class="o" id="ps"><h2>Pausado</h2><button onclick="resume()">Continuar</button><button onclick="menu()">Sair</button></div>
+<div class="o" id="en"><h1 id="et"></h1><p id="ed"></p><button id="e1"></button><button onclick="menu()">Menu</button></div>
+<div class="o" id="q"><h2 id="qt"></h2><div id="qbw"><div id="qb"></div></div><div id="qo"></div><p id="qf">&nbsp;</p></div>
+</div>
+<div id="rot">⟳ Gire o celular para a horizontal para jogar</div>
+<script>
+const $=id=>document.getElementById(id),C=$('c'),X=C.getContext('2d'),W=320,H=180;C.width=W;C.height=H;
+const OV=document.createElement('canvas');OV.width=W;OV.height=H;const O=OV.getContext('2d');
+const R=(x,y,w,h,c)=>{X.fillStyle=c;X.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
+const hs=n=>{n=Math.sin(n*127.1+311.7)*43758.5;return n-Math.floor(n)};
+
+// Configurações de Fases e Assassinos
+const LV="Beco Sombrio|O Açougueiro|#3b1c10|#d0702e|#5a463c|#3a2420|#6b1a1a|#ddd;Circo Abandonado|Palhaço Ácido|#1d1030|#6a2a70|#3a3050|#2a1840|#2a8a3a|#f0e020;Laboratório Clandestino|Alquimista Louco|#0c1c24|#1e6a60|#2a4048|#14303a|#5a2a8a|#6ff;Hospital Esquecido|Médico da Peste|#1a2228|#58707a|#4a5458|#2c3840|#222|#cde;Fábrica Tóxica|Mascarado Químico|#2a2a10|#8a8a20|#505030|#303018|#a88a10|#3f3;Milharal Maldito|O Espantalho|#2a1608|#b07a20|#5a4020|#3a2a10|#8a6a2a|#f80;Escola Vazia|O Zelador|#101830|#3a4a8a|#404868|#202848|#3a5a8a|#ff6;Cemitério|O Ceifador|#0a0a14|#34344a|#2a2a3a|#18182a|#111|#f33;Usina Radioativa|Dama Atômica|#102a10|#40c040|#2a4a2a|#183818|#3ac03a|#ffa;Castelo do Reitor|Rei do Laboratório|#180808|#601818|#3a2020|#241010|#8a0a0a|#fc0".split(';').map(s=>s.split('|'));
+
+// Banco de Perguntas Expandido (6 perguntas por fase para alta variedade)
+const Q=[
+[
+"Qual o símbolo químico do sódio?|Na|So|S|Sd",
+"Qual o número atômico do hidrogênio?|1|2|8|0",
+"Qual o símbolo químico do potássio?|K|P|Pt|Po",
+"Qual elemento tem o símbolo Au?|Ouro|Prata|Alumínio|Argônio",
+"Qual elemento tem o símbolo Fe?|Ferro|Flúor|Fósforo|Frâncio",
+"Quantos prótons tem o átomo de carbono?|6|12|8|4"
+],
+[
+"Qual o pH de uma solução neutra a 25 °C?|7|0|14|1",
+"Qual ácido existe no suco gástrico?|HCl|H2SO4|HNO3|CH3COOH",
+"Se uma solução tem pH 2, ela é:|Ácida|Básica|Neutra|Salina",
+"O vinagre contém principalmente qual ácido?|Acético|Clorídrico|Sulfúrico|Nítrico",
+"A fórmula do ácido sulfúrico é:|H2SO4|HCl|HNO3|H3PO4",
+"Uma solução com pH 11 é considerada:|Básica|Ácida|Neutra|Ácida forte"
+],
+[
+"Qual a fórmula do gás carbônico?|CO2|CO|C2O|O2C",
+"Qual o gás nobre mais leve?|Hélio|Neônio|Argônio|Hidrogênio",
+"Qual a fórmula da água oxigenada?|H2O2|H2O|HO2|O3",
+"Qual gás é liberado na queima de combustíveis fósseis?|CO2|O2|H2|N2",
+"Qual gás é liberado pelas plantas na fotossíntese?|Oxigênio|CO2|Nitrogênio|Metano",
+"Qual gás é conhecido como gás hilariante?|N2O|CO|NO2|NH3"
+],
+[
+"A ligação entre Na e Cl no sal de cozinha é:|Iônica|Covalente|Metálica|Dipolo",
+"Qual a fórmula da amônia?|NH3|NH4|N2H|HN2",
+"Ligações covalentes ocorrem geralmente entre:|Ametais|Metais|Metais e ametais|Gases nobres",
+"O sal de cozinha comum é composto por:|Sódio e Cloro|Sódio e Flúor|Potássio e Cloro|Ferro e Oxigênio",
+"Os halogênios ficam em qual grupo da tabela?|17|1|18|2",
+"Qual a fórmula do cloreto de sódio?|NaCl|NaOH|KCl|Na2O"
+],
+[
+"Passagem direta de sólido para gás chama-se:|Sublimação|Fusão|Ebulição|Condensação",
+"Qual o gás mais abundante no ar?|Nitrogênio|Oxigênio|CO2|Argônio",
+"A mudança de líquido para gás é chamada de:|Vaporização|Fusão|Solidificação|Sublimação",
+"O ponto de fusão da água pura ao nível do mar é:|0 °C|100 °C|25 °C|-10 °C",
+"Misturas com apenas uma fase visível são:|Homogêneas|Heterogêneas|Coloidais apenas|Insolúveis",
+"A água ferve a quantos °C ao nível do mar?|100|0|50|212"
+],
+[
+"Quantos elétrons tem a camada de valência do carbono?|4|2|6|8",
+"Qual a fórmula da glicose?|C6H12O6|C2H6O|CH4|C12H22O11",
+"O carbono faz quantas ligações químicas estáveis?|4|2|3|1",
+"O elemento base da química orgânica é:|Carbono|Nitrogênio|Oxigênio|Hidrogênio",
+"Na combustão completa de hidrocarbonetos formam-se:|CO2 e H2O|CO e H2|C e H2O|O3 e H2",
+"Qual o nome oficial de CH3OH?|Metanol|Etanol|Metano|Propanol"
+],
+[
+"Qual destas é uma base forte?|NaOH|HCl|NaCl|CH4",
+"Qual o valor da constante de Avogadro?|6,02×10²³|3,0×10⁸|9,8|1,6×10⁻¹⁹",
+"Segundo Arrhenius, bases liberam em água o íon:|OH⁻|H⁺|Cl⁻|Na⁺",
+"Ácidos fortes em solução aquosa sofrem:|Ionização total|Ionização parcial|Precipitação|Fusão",
+"A reação entre ácido + base produz:|Sal e água|Só sal|Só água|Gás e fogo",
+"Qual a fórmula do ácido clorídrico?|HCl|HClO|NaCl|Cl2"
+],
+[
+"Qual metal é líquido à temperatura ambiente?|Mercúrio|Ferro|Cobre|Ouro",
+"Qual a fórmula do metano?|CH4|C2H6|CO2|C2H4",
+"O metal mais condutor de eletricidade comum é:|Prata|Ferro|Chumbo|Zinco",
+"Qual o principal minério de ferro extraído no Brasil?|Hematita|Bauxita|Galena|Pirita",
+"Qual metal alcalino é usado em baterias de celular?|Lítio|Cálcio|Ferro|Prata",
+"O bronze é uma liga metálica formada principalmente por:|Cobre e estanho|Ferro e carbono|Ouro e prata|Zinco e mercúrio"
+],
+[
+"Qual partícula tem carga negativa?|Elétron|Próton|Nêutron|Pósitron",
+"Qual radiação é a mais penetrante?|Gama|Alfa|Beta|Luz visível",
+"O núcleo do átomo é composto por:|Prótons e nêutrons|Prótons e elétrons|Elétrons e nêutrons|Apenas elétrons",
+"Partículas alfa possuem carga elétrica:|Positiva|Negativa|Neutra|Variável",
+"A radiação alfa é formada por:|2 prótons e 2 nêutrons|Elétrons|Fótons|Nêutrons",
+"O número de massa (A) é a soma de:|Prótons e nêutrons|Prótons e elétrons|Elétrons e nêutrons|Apenas prótons"
+],
+[
+"Quantos mols há em 18 g de água (H=1; O=16)?|1 mol|2 mols|18 mols|0,5 mol",
+"A tabela periódica é ordenada por:|Número atômico crescente|Massa decrescente|Cor|Ordem alfabética",
+"A massa molar do gás oxigênio (O2) é aproximadamente:|32 g/mol|16 g/mol|8 g/mol|64 g/mol",
+"1 mol de qualquer gás perfeito nas CNTP ocupa:|22,4 litros|10 litros|1 litro|24 litros",
+"Elementos de um mesmo período têm o mesmo número de:|Camadas eletrônicas|Prótons|Nêutrons|Elétrons de valência",
+"Qual a unidade de pressão no Sistema Internacional?|Pascal|Joule|Watt|Newton"
+]
+];
+
+let SEEN={};try{SEEN=JSON.parse(localStorage.getItem('cn_seen'))||{}}catch(e){}
+function pickQ(){
+  let p=Q[S.lv],s=SEEN[S.lv]||[],av=p.map((_,i)=>i).filter(i=>!s.includes(i));
+  if(!av.length){s=[];av=p.map((_,i)=>i)}
+  let i=av[Math.floor(Math.random()*av.length)];
+  s.push(i);SEEN[S.lv]=s;
+  try{localStorage.setItem('cn_seen',JSON.stringify(SEEN))}catch(e){}
+  return p[i]
+}
+
+const CH=[
+  {n:'Leo',d:'Estudante comum.',ha:'#5a3320',sh:'#e8e8e8',pa:'#2f4c8a',sp:0},
+  {n:'Mia',d:'Estudante comum.',ha:'#c0392b',sh:'#e07fb0',pa:'#4a3a6a',sp:0},
+  {n:'Dr. Quím ★',d:'ESPECIAL: sem debuffs e imune às armadilhas.',ha:'#ddd',sh:'#fff',pa:'#3a3a48',sp:1,gl:'#4ff'},
+  {n:'Nox ★',d:'ESPECIAL: sem debuffs e imune às armadilhas.',ha:'#222',sh:'#2a2a3a',pa:'#111',sp:1,gl:'#8f4'}
+];
+
+const PTS=10;let SC=Array(10).fill(0);try{SC=JSON.parse(localStorage.getItem('cn_sc'))||SC}catch(e){}
+const tot=()=>SC.reduce((a,b)=>a+b,0);function win(){SC[S.lv]=PTS;try{localStorage.setItem('cn_sc',JSON.stringify(SC))}catch(e){}end(true)}
+const DN=['','Lentidão','Controles invertidos','Visão prejudicada','Desorientação'];
+const S={jy:0,jv:0,st:'menu',lv:0,ch:0,u:0,v:0,ku:-60,kv:0,mode:0,tr:[],t:0,un:1,fl:0,hb:0,deb:0,dt:0,slow:0,stun:0,hp:3,L:900,src:''};
+try{S.un=+localStorage.getItem('cn_un')||1}catch(e){}
+
+const D={l:0,r:0,u:0,d:0},J={x:0,y:0};let jp=null;const jz=$('jz'),jb=$('jb'),jk=$('jk');
+function jset(dx,dy){let m=Math.hypot(dx,dy),rr=40;if(m>rr){dx*=rr/m;dy*=rr/m}jk.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;let nx=dx/rr,ny=dy/rr;J.x=Math.abs(nx)<.15?0:nx;J.y=Math.abs(ny)<.15?0:ny}
+jz.onpointerdown=e=>{e.preventDefault();aud();jp={id:e.pointerId,x:e.clientX,y:e.clientY};let r=jz.getBoundingClientRect();jb.style.left=(e.clientX-r.left)+'px';jb.style.top=(e.clientY-r.top)+'px';jb.style.opacity=1;try{jz.setPointerCapture(e.pointerId)}catch(x){}jset(0,0)};
+jz.onpointermove=e=>{if(jp&&e.pointerId==jp.id)jset(e.clientX-jp.x,e.clientY-jp.y)};
+const jend=e=>{if(jp&&e.pointerId==jp.id){jp=null;jset(0,0);jb.style.left='70px';jb.style.top='calc(100% - 70px)';jb.style.opacity=.5}};jz.onpointerup=jend;jz.onpointercancel=jend;$('jpb').onpointerdown=e=>{e.preventDefault();aud();jump()};function jump(){if(S.st=='play'&&S.jy<=0&&S.jv==0)S.jv=170}
+addEventListener('keydown',e=>{if(e.key==' ')jump();let k={ArrowLeft:'l',a:'l',ArrowRight:'r',d:'r',ArrowUp:'u',w:'u',ArrowDown:'d',s:'d'}[e.key];if(k)D[k]=1;aud()});
+addEventListener('keyup',e=>{let k={ArrowLeft:'l',a:'l',ArrowRight:'r',d:'r',ArrowUp:'u',w:'u',ArrowDown:'d',s:'d'}[e.key];if(k)D[k]=0});
+document.querySelectorAll('#dp button').forEach(b=>{let k=b.dataset.d;b.onpointerdown=e=>{e.preventDefault();D[k]=1;aud()};['pointerup','pointerleave','pointercancel'].forEach(v=>b.addEventListener(v,()=>D[k]=0))});
+
+// Áudio
+let AC,dr,dg;
+function aud(){try{screen.orientation.lock('landscape').catch(()=>{})}catch(e){}if(AC)return;try{AC=new(window.AudioContext||window.webkitAudioContext)();dr=AC.createOscillator();dr.type='sawtooth';dr.frequency.value=48;let f=AC.createBiquadFilter();f.frequency.value=200;dg=AC.createGain();dg.gain.value=.03;dr.connect(f);f.connect(dg);dg.connect(AC.destination);dr.start()}catch(e){AC=0}}
+function amb(d){if(!AC)return;dg.gain.setTargetAtTime(.03+d*.12,AC.currentTime,.1);dr.frequency.setTargetAtTime(48+d*36,AC.currentTime,.2)}
+function tone(f1,f2,dur,type,g){if(!AC)return;let o=AC.createOscillator(),v=AC.createGain(),t=AC.currentTime;o.type=type;o.frequency.setValueAtTime(f1,t);o.frequency.exponentialRampToValueAtTime(f2,t+dur);v.gain.setValueAtTime(g,t);v.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(v);v.connect(AC.destination);o.start();o.stop(t+dur)}
+function scareSnd(){if(!AC)return;tone(1400,120,1.1,'sawtooth',.4);tone(90,40,1.2,'square',.4);let b=AC.createBuffer(1,AC.sampleRate,AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*(1-i/d.length);let s=AC.createBufferSource(),g=AC.createGain();g.gain.value=.5;s.buffer=b;s.connect(g);g.connect(AC.destination);s.start()}
+
+// UI
+function scr(id){document.querySelectorAll('.o').forEach(e=>e.classList.toggle('on',e.id==id))}
+function setSt(s){S.st=s;$('jz').style.display=$('jpb').style.display=s=='play'?'block':'none';if(s!='play'){J.x=J.y=0}$('pb').style.display=s=='play'?'block':'none'}
+function mkLS(){let g=$('lg');g.innerHTML='';LV.forEach((l,i)=>{let b=document.createElement('button');b.textContent=i+1;b.disabled=i>=S.un;b.onclick=()=>start(i);b.onpointerenter=()=>$('li').textContent=l[0]+' — '+l[1];g.append(b)});$('li').innerHTML='Personagem: <b>'+CH[S.ch].n+'</b> · Pontos: <b>'+tot()+'/'+PTS*10+'</b>'}
+function mkCS(){let g=$('cg');g.innerHTML='';CH.forEach((c,i)=>{let b=document.createElement('button');b.innerHTML='<b>'+c.n+'</b><br><small>'+c.d+'</small>';if(i==S.ch)b.style.background='#5a1a12';b.onclick=()=>{S.ch=i;mkCS()};g.append(b)})}
+function menu(){setSt('menu');S.tr=[];scr('m')}
+function pause(){if(S.st=='play'){setSt('pause');scr('ps')}}
+function resume(){scr(null);setSt('play')}
+
+function start(l){
+  Object.assign(S,{lv:l,L:2400+l*70,jy:0,jv:0,ks:62,kb:0,pf:1,ac:4,tg:0,kd:0,hf:0,u:0,v:0,ku:-80,kv:0,hp:3,mode:0,deb:0,dt:0,slow:0,stun:0,lt:5,fl:0,t:0,hb:0,n:0,src:''});
+  S.tr=[];S.z=[];
+  let k=3;for(let i=0;i<k;i++){let a=300+i*(S.L-700)/k+hs(i+l*5)*60;S.z.push([a,a+220])}
+  let n=Math.floor(S.L/100);
+  for(let i=0;i<n;i++){
+    let ty=T[l].split('|')[0];
+    S.tr.push({u:170+(i+hs(i*11+l)*.9)*(S.L-300)/n,v:(hs(i*3+l)-.5)*50,h:-999,o:hs(i+5)*2.2,k:ty[Math.floor(hs(i*7+l)*ty.length)]})
+  }
+  aud();scr(null);setSt('play')
+}
+
+// Função de Fim de Jogo (Restaurada para evitar ReferenceError)
+function end(w){
+  setSt('end');amb(0);let L=LV[S.lv];
+  $('et').textContent=w?'VOCÊ ESCAPOU!':'FIM DE JOGO';
+  $('ed').textContent=w?(S.lv==9?'Você derrotou todos os assassinos! Total: '+tot()+'/'+PTS*10+' pontos.':'Fase '+(S.lv+1)+' concluída — '+L[1]+' ficou para trás. +'+PTS+' pontos (total '+tot()+'/'+PTS*10+').'):(S.src=='chest'?'O baú explodiu na fase '+(S.lv+1)+'. Revise a matéria!':L[1]+' te pegou na fase '+(S.lv+1)+'. Revise a matéria!');
+  let b=$('e1');
+  if(w&&S.lv<9){b.textContent='Próxima fase';b.onclick=()=>start(S.lv+1);if(S.un<S.lv+2){S.un=S.lv+2;try{localStorage.setItem('cn_un',S.un)}catch(e){}}}
+  else{b.textContent=w?'Jogar de novo':'Tentar de novo';b.onclick=()=>start(w?0:S.lv)}
+  scr('en')
+}
+
+// QTE (Perguntas)
+function qte(){
+  setSt('qte');
+  let a=pickQ().split('|'),ans=a[1];
+  $('qt').textContent=a[0];
+  $('qo').innerHTML='';
+  $('qf').innerHTML='&nbsp;';
+  a.slice(1).sort(()=>Math.random()-.5).forEach(t=>{
+    let b=document.createElement('button');
+    b.textContent=t;b.dataset.ok=t==ans?1:0;
+    b.onclick=()=>answer(b,t==ans);
+    $('qo').append(b)
+  });
+  S.qt=10;S.ql=0;scr('q')
+}
+
+function answer(b,ok){
+  if(S.ql)return;S.ql=1;
+  document.querySelectorAll('#qo button').forEach(x=>{if(x.dataset.ok==1)x.style.background='#1f7a3a'});
+  if(b&&!ok)b.style.background='#8a1f1f';
+  $('qf').textContent=ok?'✔ Correto! Você escapou!':(b?'✘ Errado!':'⏱ Tempo esgotado!');
+  tone(ok?500:120,ok?900:60,.3,'square',.15);
+  setTimeout(()=>{
+    scr(null);
+    if(ok){S.src=='chest'?cin_('open',6,1.9):cin_('fight',4.2)}
+    else{if(S.src=='chest')cin_('boom',3.2);else{S.sc=1.3;setSt('scare');scareSnd()}}
+  },900)
+}
+
+// Cenas e Desenhos
+function cin_(k,d,t0){S.cin=k;S.cd=d;S.ct=t0||0;amb(0);setSt('cin')}
+function fight(t,c){
+  let px=t<.9?50+t*140:176-(t-.9)*8,kx=203+Math.min(1,Math.max(0,(t-.9)*2))*30;PL(px,138,c,t,t<.9);
+  if(t<.9)K(210,138,1,S.lv,t);else{X.save();X.translate(kx,138);X.rotate(Math.min(1,(t-.9)*1.5)*1.57);X.globalAlpha=Math.max(0,Math.min(1,1-(t-2.2)));K(0,0,1,S.lv,0);X.restore()}
+  if(t>.8&&t<1.4){R(0,0,W,H,`rgba(255,255,255,${(1.4-t)*1.2})`);for(let i=0;i<8;i++){let a=i*.785,d=(t-.8)*70;R(190+Math.cos(a)*d,118+Math.sin(a)*d,3,3,'#ffe066')}}
+  X.font='8px monospace';X.fillStyle='#f3e3c3';X.fillText(t<1?'Você enfrenta '+LV[S.lv][1]+'!':'Você derrotou '+LV[S.lv][1]+'!',90,30);
+  if(t>2.2){X.font='12px monospace';X.fillStyle='#ffe066';X.fillText('+'+PTS+' PONTOS!',118,60);X.font='8px monospace'}
+}
+function cin(){
+  let t=S.ct,k=S.cin,c=CH[S.ch];R(0,0,W,H,'#0b0710');R(0,100,W,80,'#2a1c30');for(let x=0;x<W;x+=20)R(x,100,1,80,'rgba(0,0,0,.25)');R(0,98,W,3,'#4a3050');
+  if(k=='fight')return fight(t,c);
+  let op=k=='open'?Math.max(0,Math.min(1,(t-2)/.6)):0,px=k=='arrive'?Math.min(125,40+t*70):125,sh=(k=='arrive'&&t>1.8||k=='boom'&&t<1)?Math.sin(t*60)*1.5:0,cx=145+sh;X.font='8px monospace';
+  if(k=='boom'&&t>=1){let tt=t-1;PL(125-tt*35,138-Math.max(0,Math.sin(tt*3)*18),c,0,0);let g=X.createRadialGradient(160,115,2,160,115,10+tt*80);g.addColorStop(0,`rgba(255,240,150,${Math.max(0,1-tt/1.6)})`);g.addColorStop(.5,`rgba(255,100,20,${Math.max(0,.8-tt/1.6)})`);g.addColorStop(1,'rgba(255,60,0,0)');X.fillStyle=g;X.fillRect(0,0,W,H);for(let i=0;i<14;i++){let x=160+(hs(i+9)-.5)*140*tt,y=115+(-90-hs(i+3)*60)*tt+130*tt*tt;if(y<176)R(x,y,3,3,i%2?'#7a4a1a':'#c9a227')}if(tt<.25)R(0,0,W,H,`rgba(255,255,255,${1-tt*4})`);X.fillStyle='#f66';X.fillText('BOOM! O baú explodiu!',100,30);return}
+  if(op>0){let g=X.createRadialGradient(160,108,2,160,108,20+op*90);g.addColorStop(0,'rgba(255,230,120,.9)');g.addColorStop(1,'rgba(255,200,60,0)');X.fillStyle=g;X.fillRect(0,0,W,H)}
+  R(cx,112,30,20,'#7a4a1a');R(cx,118,30,3,'#c9a227');R(cx+13,114,4,6,'#e8c547');R(cx,106-op*12,30,7,'#8a5a22');R(cx,108-op*12,30,2,'#c9a227');if(op>0)R(cx+2,111,26,2,'#fff0a0');
+  PL(px-(k=='arrive'?0:18),138,c,t,k=='arrive'&&t<1.7);if(k=='boom')R(0,0,W,H,`rgba(255,0,0,${t*.15})`);
+  X.fillStyle='#f3e3c3';X.fillText(k=='arrive'?(t<1.6?'Linha de chegada! Um baú...':t<2.6?'Você tenta abrir o baú...':'Responda para abrir!'):k=='open'?(t<2?'Resposta certa! O baú abre...':'Fase concluída!'):'O baú começa a tremer...',90,30);
+  if(k=='open'&&t>2.6){let tt=t-2.6;for(let i=0;i<16;i++){let x=160+(hs(i+9)-.5)*90*tt,y=108+(-70-hs(i+3)*70)*tt+120*tt*tt;if(y<176)R(x-1,y-1,3,3,'#ffd23a')}X.font='12px monospace';X.fillStyle='#ffe066';X.fillText('+'+PTS+' PONTOS!',118,60);X.font='8px monospace'}
+}
+
+// Habilidades Especiais dos Assassinos por Fase
+const AB=['INVESTIDA FEROZ!','CHUVA ÁCIDA!','NUVEM TÓXICA!','GÁS MIÓTICO!','CAIXOTE ARMADILHA!','TEIAS ESPINHOSAS!','DESCARGA ELÉTRICA!','TELEPORTE SOMBRIO!','RADIAÇÃO GAMA!','FÚRIA ALQUÍMICA!'];
+function spawn(k,n){for(let i=0;i<n;i++)S.tr.push({u:S.u+110+i*38,v:Math.max(-25,Math.min(25,S.v+(Math.random()-.5)*24)),h:-999,o:Math.random()*2.2,k})}
+
+function fire(){
+  let lv=S.lv,c=CH[S.ch];
+  S.ab=lv; S.tg=0.9;
+  if(lv==0){ S.kd=1.4; }
+  else if(lv==1){ spawn('A',3); }
+  else if(lv==2){ spawn('G',3); }
+  else if(lv==3){ if(!c.sp){S.deb=2;S.dt=5;} }
+  else if(lv==4){ spawn('C',3); }
+  else if(lv==5){ spawn('N',3); }
+  else if(lv==6){ if(!c.sp){S.deb=4;S.dt=4;} }
+  else if(lv==7){ S.ku=Math.max(S.ku,S.u-30); }
+  else if(lv==8){ if(!c.sp){S.deb=3;S.dt=4;} }
+  else if(lv==9){ S.kd=1.2; spawn('A',2); spawn('G',2); }
+}
+
+const T=['AC|f','CN|f','AG|','CN|f','AE|','NC|g','CE|f','NG|g','GE|f','ACNGE|fg'];
+function actv(t){return t.k=='G'?(S.t*.7+t.o)%2<1.2:t.k=='E'?(S.t+t.o)%2.2<1.1:1}
+function drawT(t,p){
+  let x=p[0],y=p[1],k=t.k,a=actv(t);
+  if(k=='A'){R(x-8,y-2,16,5,'#40e060');R(x-4,y-3,8,2,'#a8ffb0')}
+  else if(k=='N'){R(x-9,y-5,18,1,'#ddd');R(x,y-10,1,10,'#ddd');R(x-7,y-9,1,9,'#bbb');R(x+6,y-9,1,9,'#bbb');R(x-9,y-2,18,1,'#bbb')}
+  else if(k=='C'){R(x-6,y-10,12,10,'#8a5a2a');R(x-6,y-10,12,2,'#b07a3a');R(x-1,y-10,2,10,'#5a3a1a')}
+  else if(k=='G'){R(x-4,y-2,8,3,'#444');if(a){R(x-9,y-9,18,8,'rgba(150,255,100,.45)');R(x-6,y-14,12,6,'rgba(180,255,120,.35)')}}
+  else{R(x-10,y-12,2,12,'#666');R(x+8,y-12,2,12,'#666');if(a){R(x-8,y-7+Math.random()*2,16,2,'#8ff');R(x-8,y-3,16,1,'rgba(150,255,255,.5)')}else R(x-8,y-6,16,1,'#333')}
+}
+const KC=LV.map(l=>l[6]),KA=LV.map(l=>l[7]);
+function K(x,y,s,i,t){let c=KC[i],a=KA[i],b=Math.sin(t*9)*s*.5,sw=Math.sin(t*9)>0?s:0;
+R(x-5*s,y-s,10*s,s,'rgba(0,0,0,.4)');R(x-3*s,y-6*s,2*s,6*s-sw,c);R(x+s,y-6*s,2*s,5*s+sw,c);
+R(x-4*s,y-15*s+b,8*s,9*s,c);R(x-6*s,y-14*s+b,2*s,8*s,c);R(x+4*s,y-14*s+b,2*s,8*s,c);
+R(x-3*s,y-21*s+b,6*s,6*s,i%3==2?'#222':'#b8a58a');R(x-2*s,y-19*s+b,s,s,a);R(x+s,y-19*s+b,s,s,a);
+let k=i%4;if(k==0){R(x-4*s,y-23*s+b,8*s,2*s,'#111');R(x-3*s,y-26*s+b,6*s,3*s,'#111')}else if(k==1){R(x-4*s,y-25*s+b,s,4*s,a);R(x+3*s,y-25*s+b,s,4*s,a)}else if(k==2){R(x-3*s,y-16*s+b,6*s,s,'#000');R(x-4*s,y-24*s+b,8*s,3*s,a)}else R(x-3*s,y-22*s+b,6*s,2*s,a);
+R(x+6*s,y-13*s+b,s,(6+i%3*3)*s,'#ccd')}
+function PL(x,y,c,t,mv){let b=mv?Math.sin(t*14):0;R(x-5,y-1,10,3,'rgba(0,0,0,.4)');if(c.sp){R(x-6,y-15,1,10,c.gl);R(x+5,y-15,1,10,c.gl)}
+R(x-3,y-5,2,b>0?4:5,c.pa);R(x+1,y-5,2,b>0?5:4,c.pa);R(x-4,y-13,8,8,c.sh);R(x-6,y-13,2,6,c.sh);R(x+4,y-13,2,6,c.sh);R(x-3,y-19,6,6,'#e0b890');R(x-3,y-20,6,3,c.ha);R(x-2,y-17,1,1,'#222');R(x+1,y-17,1,1,'#222')}
+const MP=(uu,vv)=>S.mode==0?[110+uu-S.u,114+vv]:[160+vv,120-(uu-S.u)*.75];
+function UT2(L,u){R(0,0,W,H,'#000');R(0,18,W,50,L[5]);let k0=Math.floor(u/16)-1;for(let r=0;r<4;r++)for(let k=k0;k<k0+22;k++)R(k*16-u+(r%2?8:0),18+r*12,15,11,hs(k*4+r+S.lv)>.5?'rgba(255,255,255,.07)':'rgba(0,0,0,.18)');R(0,66,W,4,'rgba(0,0,0,.5)');
+let p0=Math.floor(u/150);for(let k=p0-1;k<p0+3;k++){let x=k*150+40+hs(k+S.lv)*50-u+110;R(x,4,16,64,L[5]);R(x,4,16,4,'rgba(255,255,255,.15)');R(x+12,4,4,64,'rgba(0,0,0,.35)')}
+R(0,70,W,92,L[4]);R(0,96,W,36,'rgba(255,255,255,.08)');for(let x=-(u%32);x<W;x+=32)R(x,70,1,92,'rgba(0,0,0,.18)');for(let y=70;y<162;y+=23)R(0,y,W,1,'rgba(0,0,0,.18)');R(0,162,W,4,'rgba(0,0,0,.6)')}
+function bg(){let L=LV[S.lv],u=S.u;
+if(S.mode==0){UT2(L,u)}else{R(0,0,W,H,L[4]);let oy=u*.75%12,r0=Math.floor(u*.75/12);for(let j=-1;j<16;j++){let y=j*12+oy,r=j-r0;for(let i=0;i<27;i++)R(i*12,y,11,11,hs(r*15+i+S.lv)>.5?'rgba(255,255,255,.07)':'rgba(0,0,0,.14)');
+R(0,y,58,12,L[5]);R(262,y,58,12,L[5]);if(hs(r*3)>.5)R(24,y+3,8,6,'#ffd070');if(hs(r*5)>.5)R(288,y+3,8,6,'#ffd070');if(hs(r*7)>.8)R(30,y-6,18,18,L[3])}
+R(58,0,2,H,'rgba(0,0,0,.4)');R(260,0,2,H,'rgba(0,0,0,.4)')}
+if(S.st!='menu'&&S.mode==0)(S.z||[]).forEach(z=>{let a=110+z[0]-u,b=110+z[1]-u;if(b<0||a>W)return;R(a,18,b-a,50,'#07050c');R(a,70,b-a,92,'rgba(200,150,80,.3)');for(let x=a;x<b;x+=12)R(x,70,1,92,'rgba(0,0,0,.2)');R(a,18,3,144,'#fc4');R(b-3,18,3,144,'#6f6');X.font='8px monospace';X.fillStyle='#fc4';X.fillText('ESQUINA ▲',a+8,45);X.fillStyle='#6f6';X.fillText('SAÍDA',b-38,45)});if(S.mode==1&&S.st!='menu')(S.z||[]).forEach(z=>{let y=120-(z[1]-u)*.75;if(y>-10&&y<H){R(58,y,204,3,'#6f6');X.font='8px monospace';X.fillStyle='#6f6';X.fillText('SAÍDA ▲',138,y-3)}});let g=MP(S.L,0);if(S.mode==0){for(let y=70;y<162;y+=8){R(g[0],y,4,4,'#fff');R(g[0]+4,y+4,4,4,'#fff');R(g[0],y+4,4,4,'#161');R(g[0]+4,y,4,4,'#161')}X.font='8px monospace';X.fillStyle='#4f4';X.fillText('CHEGADA',g[0]-12,66)}else R(58,g[1],204,4,'#4f4')}
+
+function draw(){
+  X.clearRect(0,0,W,H);
+  let d=S.st=='play'&&S.dt>0?S.deb:0;C.style.transform=d==4?`rotate(${Math.sin(S.t*2)*4}deg) scale(1.08)`:'';C.style.filter=d==4?`hue-rotate(${Math.sin(S.t)*70}deg) blur(.7px)`:'';
+  if(S.st=='cin'||S.st=='qte'&&S.src=='chest')return cin();if(S.st=='scare'){R(0,0,W,H,Math.random()<.3?'#700':'#000');K(160+(Math.random()-.5)*8,178,7,S.lv,S.t*3);R(0,0,W,H,'rgba(255,0,0,.2)');return}
+  bg();let pl=MP(S.u,S.v),kp=MP(S.ku,S.kv);
+  S.tr.forEach(t=>drawT(t,MP(t.u,t.v)));
+  let c=CH[S.ch],mv=D.l||D.r||D.u||D.d||J.x||J.y,ar=[[kp[1],()=>K(kp[0],kp[1],1,S.lv,S.t)],[pl[1],()=>PL(pl[0],pl[1]-S.jy,c,S.t,mv&&S.st=='play')]].sort((a,b)=>a[0]-b[0]);ar.forEach(a=>a[1]());
+
+  let am=T[S.lv].split('|')[1],t7=S.t%7,bl=am.includes('f')&&S.st=='play'&&(t7<.5||t7>.8&&t7<.95),dk=Math.min(.97,Math.min(.86,.55+S.lv*.03)+(bl?.4:0)),r=(d==3?20:am.includes('g')?48:70)*(bl?.45:1)*(1+.05*Math.sin(S.t*23+Math.random()));O.globalCompositeOperation='source-over';O.clearRect(0,0,W,H);O.fillStyle=`rgba(4,2,8,${dk})`;O.fillRect(0,0,W,H);O.globalCompositeOperation='destination-out';let gr=O.createRadialGradient(pl[0],pl[1]-10,2,pl[0],pl[1]-10,r);gr.addColorStop(0,'#000');gr.addColorStop(1,'rgba(0,0,0,0)');O.fillStyle=gr;O.fillRect(0,0,W,H);X.drawImage(OV,0,0);
+  if(am.includes('g'))R(0,0,W,H,'rgba(190,210,190,.09)');let gap=S.u-S.ku,dn=Math.max(0,1-gap/110);if(S.mode&&kp[1]>H+6&&S.st=='play'){let ix=Math.max(8,Math.min(W-16,kp[0]-4));R(ix,H-5,8,3,'#e33');R(ix+2,H-8,4,3,'#e33')}R(kp[0]-2,kp[1]-19,1,1,KA[S.lv]);R(kp[0]+1,kp[1]-19,1,1,KA[S.lv]);R(0,0,W,H,`rgba(255,0,0,${dn*.16})`);
+  if(S.mode){R(0,0,W,H,'rgba(255,150,50,.09)');let g=X.createLinearGradient(0,0,0,H);g.addColorStop(0,'rgba(0,0,0,.5)');g.addColorStop(.2,'rgba(0,0,0,0)');g.addColorStop(.8,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.5)');X.fillStyle=g;X.fillRect(0,0,W,H)}
+  if(S.st=='menu')return;
+
+  R(40,8,100,5,'#222');R(40,8,100*dn,5,'#e33');R(40,15,100,3,'#222');R(40,15,100*Math.min(1,S.u/S.L),3,'#4c4');
+  X.font='8px monospace';X.fillStyle='#f3e3c3';X.fillText('Fase '+(S.lv+1)+' · '+LV[S.lv][0],8,26);if(d)X.fillStyle='#f66',X.fillText('! '+DN[d],8,36);if(S.slow>0&&!c.sp)X.fillStyle='#4f6',X.fillText('Lento!',8,d?46:36);
+  if(S.t<4&&S.st=='play'){X.fillStyle='#fff';X.fillText('Você corre sozinho! Desvie e pule',70,52)}
+  if(S.tg>0&&S.st=='play'){R(0,0,W,H,'rgba(255,0,0,.12)');X.font='12px monospace';X.fillStyle='#f33';X.fillText(AB[S.ab],100,48);X.font='8px monospace'}
+  if(S.hf>0&&S.st=='play'){R(0,0,W,H,`rgba(255,40,40,${Math.min(.4,S.hf*.5)})`);X.font='10px monospace';X.fillStyle='#fff';X.fillText(S.hm,90,70);X.font='8px monospace'}
+  let nz=S.z&&S.z.find(z=>z[0]>S.u&&z[0]-S.u<200);if(nz&&S.mode==0&&S.st=='play'){X.fillStyle='#fc4';X.fillText('ESQUINA À FRENTE >>',110,52)}
+  if(S.fl>0){R(0,0,W,H,`rgba(255,255,255,${S.fl*1.6})`)}
+}
+
+function upd(dt){
+  let c=CH[S.ch],d=S.dt>0?S.deb:0;
+  if(S.dt>0){S.dt-=dt;if(S.dt<=0)S.deb=0}
+  let ax=Math.max(-1,Math.min(1,D.r-D.l+J.x)),ay=Math.max(-1,Math.min(1,D.d-D.u+J.y));if(d==2){ax=-ax;ay=-ay}
+  let sp=58*(d==1?.55:1)*(S.slow>0?.5:1);S.slow-=dt;let du=S.mode?-ay:ax,dv=S.mode?ax:ay;
+  S.pf+=(1+.25*du-S.pf)*Math.min(1,dt*6);S.u+=S.pf*sp*dt;let w=S.mode?90:32;S.v=Math.max(-w,Math.min(w,S.v+dv*sp*.8*dt));
+  if(S.jv!=0||S.jy>0){S.jy+=S.jv*dt;S.jv-=520*dt;if(S.jy<=0){S.jy=0;S.jv=0}}
+
+  if(S.jy<10){
+    S.tr.forEach(t=>{
+      if(S.t-t.h>3&&actv(t)&&Math.abs(t.u-S.u)<18&&Math.abs(t.v-S.v)<16){
+        t.h=S.t;let k=t.k;
+        if(c.sp){S.hm='IMUNE ★';S.hf=.3;return}
+        if(k=='A'){S.deb=1+Math.floor(Math.random()*4);S.dt=6}
+        else if(k=='N'){S.slow=1.8}
+        else if(k=='C'){S.slow=1.2}
+        else if(k=='G'){S.deb=3;S.dt=5}
+        else{S.deb=2;S.dt=5}
+        S.kb=2;S.hf=.5;
+        S.hm=({A:'ÁCIDO! '+DN[S.deb],N:'PRESO NA TEIA!',C:'BATEU NO CAIXOTE!',G:'GÁS TÓXICO!',E:'CHOQUE!'})[k];
+        tone(200,80,.3,'sawtooth',.2)
+      }
+    })
+  }
+
+  let g=S.u-S.ku;
+  let kt=(65+S.lv*3.5)*(1+.1*Math.sin(S.t*1.5))*(1+Math.min(.6,Math.max(0,g-70)/140))*(S.kd>0?1.8:1);
+  S.kb-=dt;S.kd-=dt;S.hf-=dt;S.ac-=dt;
+  if(S.ac<=0&&S.tg<=0){fire();S.ac=Math.max(3.5,8-S.lv*.35)+Math.random()*2}
+  if(S.tg>0){S.tg-=dt;if(S.tg<=0)S.tg=0}
+  S.ks+=(kt-S.ks)*Math.min(1,dt*4);
+  let spd=S.ks;if(S.stun>0){S.stun-=dt;spd=0}
+  S.ku+=spd*dt;S.kv+=Math.max(-40*dt,Math.min(40*dt,S.v-S.kv));
+  let dn=Math.max(0,1-g/110);amb(dn);S.hb-=dt;if(S.hb<=0){tone(70,35,.15,'sine',.3);S.hb=1.1-.7*dn}
+  if(S.stun<=0&&g<12&&Math.abs(S.kv-S.v)<16){S.src='caught';return qte()}
+  let nm=S.z.some(z=>S.u>=z[0]&&S.u<z[1])?1:0;if(nm!=S.mode){S.mode=nm;S.fl=.4}
+  if(S.u>=S.L){S.src='chest';cin_('arrive',2.6)}
+}
+
+let last=0;
+function loop(ts){
+  let dt=Math.min(.05,(ts-last)/1000||0);last=ts;S.t+=dt;S.fl=Math.max(0,S.fl-dt);
+  if(S.st=='play')upd(dt);
+  else if(S.st=='menu'){S.u+=30*dt;S.ku=S.u-60;S.lv=Math.floor(S.t/8)%10;S.mode=Math.floor(S.t/6)%2}
+  else if(S.st=='qte'){if(!S.ql){S.qt-=dt;if(S.qt<=0)answer(null,false)}$('qb').style.width=Math.max(0,S.qt*10)+'%'}
+  else if(S.st=='cin'){let o=S.ct,k=S.cin;S.ct+=dt;if(k=='open'&&o<2&&S.ct>=2)tone(300,1300,.7,'triangle',.3);if(k=='boom'&&o<1&&S.ct>=1){scareSnd();tone(80,30,1,'square',.5)}if(k=='fight'&&o<.9&&S.ct>=.9)tone(160,40,.4,'square',.4);if(S.ct>S.cd){if(k=='arrive')qte();else if(k=='boom')end(false);else win()}}
+  else if(S.st=='scare'){S.sc-=dt;if(S.sc<=0){end(false)}}
+  draw();requestAnimationFrame(loop)
+}
+requestAnimationFrame(loop);
+</script></body></html>
